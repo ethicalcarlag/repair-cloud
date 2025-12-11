@@ -126,7 +126,7 @@ def generar_pdf(ticket, tecnico, precio, nota):
         
     # Pie de página
     pdf.ln(20)
-    pdf.cell(200, 10, txt="Gracias por confiar en nosotras.", ln=1, align="C")
+    pdf.cell(200, 10, txt="Gracias por confiar en nosotros.", ln=1, align="C")
     
     return pdf.output(dest="S").encode("latin-1")
 
@@ -174,9 +174,9 @@ if menu == "🏠 Recepción":
             else:
                 txt = desc.lower()
                 # LÓGICA IA
-                if any(k in txt for k in ["agua", "mojado", "liquido"]):
-                    st.session_state.ai_response = "🤖 AI: ⚠️ DAÑO POR LÍQUIDOS. No encender. Baño químico."; st.session_state.ai_status="error"
-                elif any(k in txt for k in ["lento", "tarda"]):
+                if any(k in txt for k in ["agua", "mojado", "liquido", "coca-cola", "cafe"]):
+                    st.session_state.ai_response = "🤖 AI: ⚠️ DAÑO POR LÍQUIDOS. ¡No encender!. Baño químico."; st.session_state.ai_status="error"
+                elif any(k in txt for k in ["lento", "tarda", "fps", "juego"]):
                     st.session_state.ai_response = "🤖 AI: Rendimiento Bajo -> Posible fallo HDD/RAM. Recomiendo SSD."; st.session_state.ai_status="warning"
                 elif any(k in txt for k in ["pantalla", "rota"]):
                     st.session_state.ai_response = "🤖 AI: Daño Físico -> Cambio LCD."; st.session_state.ai_status="error"
@@ -210,7 +210,7 @@ if menu == "🏠 Recepción":
         else:
             st.error("Faltan datos.")
 
-# --- PANTALLA 2: TÉCNICO (AQUÍ ESTÁ EL CAMBIO IMPORTANTE) ---
+# --- PANTALLA 2: TÉCNICO  ---
 elif menu == "🔧 Taller":
     st.title("🛠️ Mesa de Trabajo")
     pendientes = cargar_datos(ARCHIVO_DB)
@@ -270,3 +270,4 @@ elif menu == "💰 CEO":
         st.dataframe(pd.DataFrame(hist))
     else:
         st.info("No hay datos.")
+
