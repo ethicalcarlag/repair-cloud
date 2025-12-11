@@ -1,3 +1,7 @@
 streamlit
 pandas
 fpdf
+gspread
+oauth2client
+qrcode
+pillow
