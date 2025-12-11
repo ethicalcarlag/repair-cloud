@@ -1,5 +1,5 @@
 # =============================================================================
-# PROYECTO: RepAIr System CLOUD v6.1 (Bug Fixed & Ready to Launch)
+# PROYECTO: RepAIr System CLOUD v6.2 (PDF Invoice Included)
 # AUTORAS: Carla y Aileen
 # =============================================================================
 
@@ -8,6 +8,7 @@ import json
 import os
 from datetime import datetime
 import pandas as pd
+from fpdf import FPDF
 
 # --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -27,18 +28,18 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. MEMORIA (SESSION STATE) - AQUÍ ESTÁ EL ARREGLO MÁGICO ---
+# --- 3. MEMORIA (SESSION STATE) ---
 if 'descripcion_texto' not in st.session_state:
     st.session_state.descripcion_texto = ""
 
-# --- INICIO DEL ARREGLO (LA BANDERA) ---
+# --- ARREGLO DE LIMPIEZA (LA BANDERA) ---
 if 'borrar_campos' not in st.session_state:
     st.session_state.borrar_campos = False
 
 if st.session_state.borrar_campos:
     st.session_state.descripcion_texto = ""
     st.session_state.borrar_campos = False
-# --- FIN DEL ARREGLO ---
+# ----------------------------------------
 
 if 'ai_response' not in st.session_state:
     st.session_state.ai_response = None
@@ -59,7 +60,7 @@ PROTOCOLOS = {
     "Otro": ["General", "Seguridad"]
 }
 
-# --- 5. FUNCIONES DE CARGA ---
+# --- 5. FUNCIONES DE CARGA Y GUARDADO ---
 def cargar_datos(archivo):
     if os.path.exists(archivo):
         try:
@@ -94,11 +95,45 @@ def borrar_de_pendientes(t_borrar):
     with open(ARCHIVO_DB, "w", encoding="utf-8") as f:
         json.dump(nuevos, f, indent=4)
 
+# --- FUNCIÓN GENERAR PDF (FACTURA) ---
+def generar_pdf(ticket, tecnico, precio, nota):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    # Cabecera
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(200, 10, txt="RepAIr System Cloud - FACTURA", ln=1, align="C")
+    pdf.ln(10)
+    
+    # Datos
+    pdf.set_font("Arial", size=12)
+    texto = [
+        f"Fecha: {datetime.now().strftime('%d/%m/%Y')}",
+        f"Cliente: {ticket['cliente']}",
+        f"Dispositivo: {ticket['dispositivo']}",
+        f"Problema: {ticket['descripcion']}",
+        "------------------------------------------------",
+        f"Técnico: {tecnico}",
+        f"Notas: {nota}",
+        "------------------------------------------------",
+        f"TOTAL A PAGAR: {precio} EUR"
+    ]
+    
+    for linea in texto:
+        # Codificación para tildes y ñ
+        pdf.cell(200, 10, txt=linea.encode('latin-1', 'replace').decode('latin-1'), ln=1)
+        
+    # Pie de página
+    pdf.ln(20)
+    pdf.cell(200, 10, txt="Gracias por confiar en nosotras.", ln=1, align="C")
+    
+    return pdf.output(dest="S").encode("latin-1")
+
 # --- 6. INTERFAZ GRÁFICA ---
 
 # BARRA LATERAL
 with st.sidebar:
-    # Si tienes el logo subido a GitHub, funcionará. Si no, saldrá el texto.
     if os.path.exists("logo.png"):
         st.image("logo.png", width=200)
     else:
@@ -129,7 +164,6 @@ if menu == "🏠 Recepción":
             st.session_state.descripcion_texto = "SOS ACTIVADO - Responde:\n1. ¿Luces? (Si/No)\n2. ¿Ruidos?\n3. ¿Pantalla?"
             st.rerun()
             
-    # CAJA DE TEXTO QUE SE ACTUALIZA
     desc = st.text_area("Descripción del Problema", key="descripcion_texto", height=100)
 
     with c_ai:
@@ -139,7 +173,7 @@ if menu == "🏠 Recepción":
                 st.session_state.ai_status = "warning"
             else:
                 txt = desc.lower()
-                # LOGICA IA
+                # LÓGICA IA
                 if any(k in txt for k in ["agua", "mojado", "liquido"]):
                     st.session_state.ai_response = "🤖 AI: ⚠️ DAÑO POR LÍQUIDOS. No encender. Baño químico."; st.session_state.ai_status="error"
                 elif any(k in txt for k in ["lento", "tarda"]):
@@ -153,7 +187,6 @@ if menu == "🏠 Recepción":
                 else:
                     st.session_state.ai_response = "🤖 AI: Diagnóstico general requerido."; st.session_state.ai_status="info"
 
-    # MOSTRAR RESPUESTA IA
     if st.session_state.ai_response:
         if st.session_state.ai_status == "error": st.error(st.session_state.ai_response)
         elif st.session_state.ai_status == "warning": st.warning(st.session_state.ai_response)
@@ -162,7 +195,6 @@ if menu == "🏠 Recepción":
     st.divider()
     urgente = st.checkbox("⚡ Urgencia (+5%)")
     
-    # --- AQUÍ ESTÁ EL CAMBIO DEL BOTÓN ---
     if st.button("🚀 Crear Ticket", type="primary", use_container_width=True):
         if cliente and desc:
             t = {"fecha": datetime.now().strftime("%Y-%m-%d %H:%M"), "cliente": cliente, "password": passw, "dispositivo": disp, "tipo": tipo, "descripcion": desc, "urgente": urgente}
@@ -170,7 +202,7 @@ if menu == "🏠 Recepción":
             st.balloons()
             st.success("✅ Guardado en la nube.")
             
-            # ACTIVAMOS LA BANDERA PARA BORRAR EN LA SIGUIENTE VUELTA
+            # Limpieza segura
             st.session_state.borrar_campos = True
             
             st.session_state.ai_response = None
@@ -178,7 +210,7 @@ if menu == "🏠 Recepción":
         else:
             st.error("Faltan datos.")
 
-# --- PANTALLA 2: TÉCNICO ---
+# --- PANTALLA 2: TÉCNICO (AQUÍ ESTÁ EL CAMBIO IMPORTANTE) ---
 elif menu == "🔧 Taller":
     st.title("🛠️ Mesa de Trabajo")
     pendientes = cargar_datos(ARCHIVO_DB)
@@ -205,12 +237,28 @@ elif menu == "🔧 Taller":
                 with c_del:
                     if st.button("🗑️", key=f"del_{i}"):
                         borrar_de_pendientes(t); st.rerun()
+                
+                # --- BOTÓN DE CIERRE CON FACTURA ---
                 with c_ok:
-                    if st.button("✅ Cerrar", key=f"ok_{i}", type="primary"):
+                    if st.button("✅ Cerrar y Factura", key=f"ok_{i}", type="primary"):
                         if tec:
+                            # 1. Generar PDF en memoria
+                            pdf_bytes = generar_pdf(t, tec, money, nota)
+                            
+                            # 2. Guardar en historial y borrar de pendientes
                             cerrar_ticket(t, tec, money, nota, hecho)
-                            st.success("Cerrado!"); st.rerun()
-                        else: st.error("Falta Técnico")
+                            
+                            # 3. Mostrar éxito y botón de descarga
+                            st.success("¡Cerrado!")
+                            st.download_button(
+                                label="📄 Descargar Factura PDF",
+                                data=pdf_bytes,
+                                file_name=f"Factura_{t['cliente']}.pdf",
+                                mime="application/pdf"
+                            )
+                            # NOTA: No usamos rerun() aquí para que dé tiempo a descargar
+                        else: 
+                            st.error("Falta Técnico")
 
 # --- PANTALLA 3: CEO ---
 elif menu == "💰 CEO":
