@@ -1,7 +1,6 @@
 # =============================================================================
-# PROYECTO: RepAIr System CLOUD v6.0 (Syntax Fixed & Skincare Approved)
-# AUTORAS: Andrés y Carla
-# EJECUTAR CON: streamlit run web_app.py
+# PROYECTO: RepAIr System CLOUD v6.1 (Bug Fixed & Ready to Launch)
+# AUTORAS: Carla y Aileen
 # =============================================================================
 
 import streamlit as st
@@ -10,7 +9,7 @@ import os
 from datetime import datetime
 import pandas as pd
 
-# --- 1. CONFIGURACIÓN DE PÁGINA (ESTO VA PRIMERO SIEMPRE) ---
+# --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
     page_title="RepAIr Cloud",
     page_icon="🐉",
@@ -18,8 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. TRUCO VISUAL (CSS) PARA QUE PAREZCA UNA APP ---
-# Ocultamos el menú de hamburguesa de arriba a la derecha y el footer
+# --- 2. TRUCO VISUAL (CSS) ---
 st.markdown("""
     <style>
         .block-container {padding-top: 1.5rem; padding-bottom: 3rem;} 
@@ -29,9 +27,19 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. MEMORIA (SESSION STATE) ---
+# --- 3. MEMORIA (SESSION STATE) - AQUÍ ESTÁ EL ARREGLO MÁGICO ---
 if 'descripcion_texto' not in st.session_state:
     st.session_state.descripcion_texto = ""
+
+# --- INICIO DEL ARREGLO (LA BANDERA) ---
+if 'borrar_campos' not in st.session_state:
+    st.session_state.borrar_campos = False
+
+if st.session_state.borrar_campos:
+    st.session_state.descripcion_texto = ""
+    st.session_state.borrar_campos = False
+# --- FIN DEL ARREGLO ---
+
 if 'ai_response' not in st.session_state:
     st.session_state.ai_response = None
 if 'ai_status' not in st.session_state:
@@ -51,11 +59,10 @@ PROTOCOLOS = {
     "Otro": ["General", "Seguridad"]
 }
 
-# --- 5. FUNCIONES DE CARGA (AQUÍ ESTABA EL ERROR, AHORA CORREGIDO) ---
+# --- 5. FUNCIONES DE CARGA ---
 def cargar_datos(archivo):
     if os.path.exists(archivo):
         try:
-            # AHORA ESTÁ BIEN INDENTADO (EN ESCALERA)
             with open(archivo, "r", encoding="utf-8") as f:
                 return json.load(f)
         except:
@@ -91,6 +98,7 @@ def borrar_de_pendientes(t_borrar):
 
 # BARRA LATERAL
 with st.sidebar:
+    # Si tienes el logo subido a GitHub, funcionará. Si no, saldrá el texto.
     if os.path.exists("logo.png"):
         st.image("logo.png", width=200)
     else:
@@ -113,7 +121,7 @@ if menu == "🏠 Recepción":
         passw = st.text_input("Contraseña / Patrón")
         tipo = st.selectbox("Categoría", ["Software", "Hardware", "Ambas", "Desconocido"])
     
-    # BOTONES DE ACCIÓN (PÁNICO + IA)
+    # BOTONES DE ACCIÓN
     c_panico, c_ai = st.columns([1, 4])
     
     with c_panico:
@@ -154,13 +162,17 @@ if menu == "🏠 Recepción":
     st.divider()
     urgente = st.checkbox("⚡ Urgencia (+5%)")
     
+    # --- AQUÍ ESTÁ EL CAMBIO DEL BOTÓN ---
     if st.button("🚀 Crear Ticket", type="primary", use_container_width=True):
         if cliente and desc:
             t = {"fecha": datetime.now().strftime("%Y-%m-%d %H:%M"), "cliente": cliente, "password": passw, "dispositivo": disp, "tipo": tipo, "descripcion": desc, "urgente": urgente}
             guardar_ticket(t)
             st.balloons()
             st.success("✅ Guardado en la nube.")
-            st.session_state.descripcion_texto = ""
+            
+            # ACTIVAMOS LA BANDERA PARA BORRAR EN LA SIGUIENTE VUELTA
+            st.session_state.borrar_campos = True
+            
             st.session_state.ai_response = None
             st.rerun()
         else:
@@ -180,7 +192,6 @@ elif menu == "🔧 Taller":
             c_check, c_fact = st.columns(2)
             with c_check:
                 st.caption("Protocolo")
-                # Recuperamos checklist o el default
                 lista_p = PROTOCOLOS.get(t.get('dispositivo'), PROTOCOLOS["Otro"])
                 hecho = st.multiselect(f"Tareas ({t['cliente']})", lista_p, key=f"m_{i}")
             
