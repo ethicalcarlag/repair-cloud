@@ -14,7 +14,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 # --- 1. CONFIGURACIÓN VISUAL (ESTILO ARCANE/HEXTECH) ---
-st.set_page_config(page_title="RepAIr Hextech", page_icon="💎", layout="wide")
+st.set_page_config(page_title="RepAIr", page_icon="💎", layout="wide")
 
 st.markdown("""
     <style>
@@ -174,7 +174,7 @@ if menu == "🏠 Recepción":
 
     # --- PARTE 3: GUARDAR (Formulario final) ---
     with st.form("save_form"):
-        urgente = st.checkbox("⚡ PRIORIDAD HEXTECH")
+        urgente = st.checkbox("⚡ URGENTE")
         # El botón final
         enviado = st.form_submit_button("🚀 REGISTRAR TICKET EN LA NUBE")
     
@@ -242,3 +242,4 @@ elif menu == "💰 Finanzas":
             st.dataframe(df)
             st.metric("Total Reparaciones", len(df))
         else: st.warning("Bóveda vacía.")
+
