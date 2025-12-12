@@ -137,7 +137,7 @@ sheet_db, sheet_hist = conectar_gsheets()
 
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Unofficial_JavaScript_logo_2.svg/1200px-Unofficial_JavaScript_logo_2.svg.png", width=50) # Pon aquí tu logo si quieres
-    st.title("💎 RepAIr Hextech")
+    st.title("💎 RepAIr")
     if sheet_db: st.success("✅ EN LÍNEA")
     else: st.error("❌ DESCONECTADO")
     menu = st.radio("NAVEGACIÓN", ["🏠 Recepción", "🔧 Taller", "💰 Finanzas"])
@@ -242,4 +242,5 @@ elif menu == "💰 Finanzas":
             st.dataframe(df)
             st.metric("Total Reparaciones", len(df))
         else: st.warning("Bóveda vacía.")
+
 
